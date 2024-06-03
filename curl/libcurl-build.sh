@@ -249,6 +249,7 @@ buildMac()
 	pushd . > /dev/null
 	cd "${CURL_VERSION}"
 	./configure -prefix="/tmp/${CURL_VERSION}-${ARCH}" $CONF_FLAGS --with-ssl=${OPENSSL}/Mac ${NGHTTP2CFG} --host=${HOST} &> "/tmp/${CURL_VERSION}-${ARCH}.log"
+	# ./configure -prefix="/tmp/${CURL_VERSION}-${ARCH}" $CONF_FLAGS --with-ssl=${OPENSSL}/Mac ${NGHTTP2CFG} --host=${HOST} --disable-ldap --disable-ldaps &> "/tmp/${CURL_VERSION}-${ARCH}.log"
 
 	make -j${CORES} >> "/tmp/${CURL_VERSION}-${ARCH}.log" 2>&1
 	make install >> "/tmp/${CURL_VERSION}-${ARCH}.log" 2>&1
