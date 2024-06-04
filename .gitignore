@@ -55,3 +55,17 @@ openssl-ios-x86_64-maccatalyst.a
 releases
 sandbox/
 example/iOS\ Test\ App/libs/
+
+# build result
+**/lib
+nghttp2/Catalyst
+nghttp2/iOS
+nghttp2/iOS-simulator
+nghttp2/Mac
+nghttp2/tvOS
+openssl/Mac
+openssl/iOS-fat
+openssl/iOS-simulator
+openssl/iOS
+openssl/*.a
+curl/include

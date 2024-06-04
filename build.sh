@@ -25,10 +25,10 @@ BUILD_MACHINE=`uname -m`
 BUILD_CMD=$*
 
 # Set minimum OS versions for target
-MACOS_X86_64_VERSION=""			# Empty = use host version
-MACOS_ARM64_VERSION=""			# Min supported is MacOS 11.0 Big Sur
+MACOS_X86_64_VERSION="11.0"			# Empty = use host version
+MACOS_ARM64_VERSION="11.0"			# Min supported is MacOS 11.0 Big Sur
 CATALYST_IOS="15.0"			# Min supported is iOS 15.0 for Mac Catalyst
-IOS_MIN_SDK_VERSION="8.0"
+IOS_MIN_SDK_VERSION="13.0"
 TVOS_MIN_SDK_VERSION="9.0"
 
 # Semantic Version Comparison
@@ -181,12 +181,16 @@ if [[ "$OPENSSL" = "3.0"* ]]; then
 	disablebitcode="-b"
 fi
 
+echo "开始编译 openssl"
+
 ## OpenSSL Build
 echo
 cd openssl
 echo -e "${bold}Building OpenSSL${normal}"
 ./openssl-build.sh -v "$OPENSSL" $engine $colorflag $catalyst $sslv3 $OSARGS
 cd ..
+
+echo "开始编译 Nghttp2"
 
 ## Nghttp2 Build
 if [ "$buildnghttp2" == "" ]; then
@@ -199,12 +203,16 @@ else
 	cd ..
 fi
 
+echo "开始编译 Curl"
+
 ## Curl Build
 echo
 echo -e "${bold}Building Curl${normal}"
 cd curl
 ./libcurl-build.sh -v "$LIBCURL" $disablebitcode $colorflag $buildnghttp2 $catalyst $sslv3 $OSARGS
 cd ..
+
+echo "编译完成开始打包"
 
 ## Archive Libraries and Clean Up
 echo
@@ -248,22 +256,16 @@ mkdir -p "$ARCHIVE/xcframework"
 cp curl/lib/libcurl_iOS.a $ARCHIVE/lib/iOS/libcurl.a
 cp curl/lib/libcurl_iOS-simulator.a $ARCHIVE/lib/iOS-simulator/libcurl.a
 cp curl/lib/libcurl_iOS-fat.a $ARCHIVE/lib/iOS-fat/libcurl.a
-cp curl/lib/libcurl_tvOS.a $ARCHIVE/lib/tvOS/libcurl.a
-cp curl/lib/libcurl_tvOS-simulator.a $ARCHIVE/lib/tvOS-simulator/libcurl.a
 cp curl/lib/libcurl_Mac.a $ARCHIVE/lib/MacOS/libcurl.a
 
 cp openssl/iOS/lib/libcrypto.a $ARCHIVE/lib/iOS/libcrypto.a
 cp openssl/iOS-simulator/lib/libcrypto.a $ARCHIVE/lib/iOS-simulator/libcrypto.a
 cp openssl/iOS-fat/lib/libcrypto.a $ARCHIVE/lib/iOS-fat/libcrypto.a
-cp openssl/tvOS/lib/libcrypto.a $ARCHIVE/lib/tvOS/libcrypto.a
-cp openssl/tvOS-simulator/lib/libcrypto.a $ARCHIVE/lib/tvOS-simulator/libcrypto.a
 cp openssl/Mac/lib/libcrypto.a $ARCHIVE/lib/MacOS/libcrypto.a
 
 cp openssl/iOS/lib/libssl.a $ARCHIVE/lib/iOS/libssl.a
 cp openssl/iOS-simulator/lib/libssl.a $ARCHIVE/lib/iOS-simulator/libssl.a
 cp openssl/iOS-fat/lib/libssl.a $ARCHIVE/lib/iOS-fat/libssl.a
-cp openssl/tvOS/lib/libssl.a $ARCHIVE/lib/tvOS/libssl.a
-cp openssl/tvOS-simulator/lib/libssl.a $ARCHIVE/lib/tvOS-simulator/libssl.a
 cp openssl/Mac/lib/libssl.a $ARCHIVE/lib/MacOS/libssl.a
 
 if [ "$catalyst" != "" ]; then
@@ -278,10 +280,6 @@ if [ "$catalyst" != "" ]; then
         -headers curl/include \
 		-library $ARCHIVE/lib/iOS-simulator/libcurl.a \
         -headers curl/include \
-		-library $ARCHIVE/lib/tvOS/libcurl.a \
-        -headers curl/include \
-		-library $ARCHIVE/lib/tvOS-simulator/libcurl.a \
-        -headers curl/include \
 		-library $ARCHIVE/lib/Catalyst/libcurl.a \
         -headers curl/include \
         -library $ARCHIVE/lib/MacOS/libcurl.a \
@@ -292,10 +290,6 @@ if [ "$catalyst" != "" ]; then
         -headers openssl/iOS/include \
 		-library $ARCHIVE/lib/iOS-simulator/libcrypto.a \
         -headers openssl/iOS-simulator/include \
-		-library $ARCHIVE/lib/tvOS/libcrypto.a \
-        -headers openssl/tvOS/include \
-		-library $ARCHIVE/lib/tvOS-simulator/libcrypto.a \
-        -headers openssl/tvOS-simulator/include \
 		-library $ARCHIVE/lib/Catalyst/libcrypto.a \
         -headers openssl/Mac/include \
         -library $ARCHIVE/lib/MacOS/libcrypto.a \
@@ -304,8 +298,6 @@ if [ "$catalyst" != "" ]; then
 	xcodebuild -create-xcframework \
 		-library $ARCHIVE/lib/iOS/libssl.a \
 		-library $ARCHIVE/lib/iOS-simulator/libssl.a \
-		-library $ARCHIVE/lib/tvOS/libssl.a \
-		-library $ARCHIVE/lib/tvOS-simulator/libssl.a \
 		-library $ARCHIVE/lib/Catalyst/libssl.a \
         -library $ARCHIVE/lib/MacOS/libssl.a \
 		-output $ARCHIVE/xcframework/libssl.xcframework
@@ -316,10 +308,6 @@ else
         -headers curl/include \
 		-library $ARCHIVE/lib/iOS-simulator/libcurl.a \
         -headers curl/include \
-		-library $ARCHIVE/lib/tvOS/libcurl.a \
-        -headers curl/include \
-		-library $ARCHIVE/lib/tvOS-simulator/libcurl.a \
-        -headers curl/include \
         -library $ARCHIVE/lib/MacOS/libcurl.a \
         -headers curl/include \
 		-output $ARCHIVE/xcframework/libcurl.xcframework
@@ -328,18 +316,12 @@ else
         -headers openssl/iOS/include \
 		-library $ARCHIVE/lib/iOS-simulator/libcrypto.a \
         -headers openssl/iOS-simulator/include \
-		-library $ARCHIVE/lib/tvOS/libcrypto.a \
-        -headers openssl/tvOS/include \
-		-library $ARCHIVE/lib/tvOS-simulator/libcrypto.a \
-        -headers openssl/tvOS-simulator/include \
         -library $ARCHIVE/lib/MacOS/libcrypto.a \
         -headers openssl/Mac/include \
 		-output $ARCHIVE/xcframework/libcrypto.xcframework
 	xcodebuild -create-xcframework \
 		-library $ARCHIVE/lib/iOS/libssl.a \
 		-library $ARCHIVE/lib/iOS-simulator/libssl.a \
-		-library $ARCHIVE/lib/tvOS/libssl.a \
-		-library $ARCHIVE/lib/tvOS-simulator/libssl.a \
         -library $ARCHIVE/lib/MacOS/libssl.a \
 		-output $ARCHIVE/xcframework/libssl.xcframework
 fi
@@ -352,16 +334,12 @@ if [ "$buildnghttp2" != "" ]; then
 	cp nghttp2/lib/libnghttp2_iOS.a $ARCHIVE/lib/iOS/libnghttp2.a
 	cp nghttp2/lib/libnghttp2_iOS-simulator.a $ARCHIVE/lib/iOS-simulator/libnghttp2.a
 	cp nghttp2/lib/libnghttp2_iOS-fat.a $ARCHIVE/lib/iOS-fat/libnghttp2.a
-	cp nghttp2/lib/libnghttp2_tvOS.a $ARCHIVE/lib/tvOS/libnghttp2.a
-	cp nghttp2/lib/libnghttp2_tvOS-simulator.a $ARCHIVE/lib/tvOS-simulator/libnghttp2.a
 	cp nghttp2/lib/libnghttp2_Mac.a $ARCHIVE/lib/MacOS/libnghttp2.a
 	if [ "$catalyst" != "" ]; then
 		cp nghttp2/lib/libnghttp2_Catalyst.a $ARCHIVE/lib/Catalyst/libnghttp2.a
 		xcodebuild -create-xcframework \
 			-library $ARCHIVE/lib/iOS/libnghttp2.a \
 			-library $ARCHIVE/lib/iOS-simulator/libnghttp2.a \
-			-library $ARCHIVE/lib/tvOS/libnghttp2.a \
-			-library $ARCHIVE/lib/tvOS-simulator/libnghttp2.a \
 			-library $ARCHIVE/lib/Catalyst/libnghttp2.a \
             -library $ARCHIVE/lib/MacOS/libnghttp2.a \
 			-output $ARCHIVE/xcframework/libnghttp2.xcframework
@@ -369,8 +347,6 @@ if [ "$buildnghttp2" != "" ]; then
 		xcodebuild -create-xcframework \
 			-library $ARCHIVE/lib/iOS/libnghttp2.a \
 			-library $ARCHIVE/lib/iOS-simulator/libnghttp2.a \
-			-library $ARCHIVE/lib/tvOS/libnghttp2.a \
-			-library $ARCHIVE/lib/tvOS-simulator/libnghttp2.a \
             -library $ARCHIVE/lib/MacOS/libnghttp2.a \
 			-output $ARCHIVE/xcframework/libnghttp2.xcframework
 	fi
